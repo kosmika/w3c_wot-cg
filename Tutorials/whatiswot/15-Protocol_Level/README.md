@@ -20,11 +20,11 @@
 
 In the previous tutorial, we explored Interaction Affordances — properties, actions, and events — and how they describe what a Thing can do. In this video, we will focus on the next important question: How do those interactions actually happen over the network?
 
-In the Web of Things, this is handled through protocol bindings. Protocol bindings define how a Consumer communicates with a Thing using concrete protocols like HTTP, CoAP, MQTT, etc.
+In the Web of Things, this is handled through bindings. Bindings define how a Consumer communicates with a Thing using concrete protocols like HTTP, CoAP, MQTT, etc. or how the data is serialized, such as JSON, text or CBOR.
 
-### What are Protocol Bindings?
+### What are Bindings?
 
-A protocol binding maps an operation of an interaction affordance — such as reading a property or invoking an action — to a specific network message: communication protocol and endpoint, and the parameters required by the protocol. By the end of this video, you'll understand how the Consumer knows where to send a request, which protocol to use, and how to encode the data.
+A binding maps an operation of an interaction affordance — such as reading a property or invoking an action — to a specific network message: communication protocol and endpoint, and the parameters required by the protocol. By the end of this video, you'll understand how the Consumer knows where to send a request, which protocol to use, and how to encode the data.
 
 ### Forms Structure
 
@@ -125,7 +125,7 @@ We will now quickly show how forms can look and what they mean for the following
 }
 ```
 
-Here, the form tells the Consumer that it can read the property `coffeeBeansLeft` using HTTP and expects a JSON response. Because this is a readproperty operation, the Consumer knows to perform an HTTP GET request.
+Here, the form tells the Consumer that it can read the property `coffeeBeansLeft` using HTTP and expects a JSON response. The HTTP method is explicitly defined using `htv:methodName` with the value `GET`, so the Consumer knows exactly which HTTP request method to use.
 
 #### CoAP
 
@@ -157,7 +157,7 @@ Let's use CoAP to invoke the `brewCoffee` action:
 }
 ```
 
-This time, the form uses a `coap://` URI to indicate CoAP instead of HTTP. From the Consumer's perspective, invoking the action works the same as with HTTP — the only difference is the underlying protocol, which is optimized for constrained devices.
+This time, the form uses a `coap://` URI to indicate CoAP instead of HTTP. The `cov:method` field explicitly specifies the CoAP request method — in this case `POST` — which tells the Consumer how to invoke the action at the protocol level. From the Consumer's perspective, invoking the action works conceptually the same as with HTTP — the only difference is the underlying protocol, which is optimized for constrained devices.
 
 #### MQTT
 
@@ -180,7 +180,7 @@ This time, the form uses a `coap://` URI to indicate CoAP instead of HTTP. From 
 }
 ```
 
-Here, the href points to an MQTT broker and topic. Instead of sending requests, the Consumer subscribes to the topic and receives event data asynchronously. The form then only describes how that data is delivered — in this case, via an MQTT broker.
+Here, the href points to an MQTT broker and topic. The Consumer connects to the MQTT broker, subscribes to the specified topic, and receives event data asynchronously from the broker whenever the event occurs. The form therefore describes what the Consumer needs to do — connect and subscribe — while the actual event data is delivered through the broker using MQTT.
 
 #### Modbus
 
@@ -207,7 +207,9 @@ Modbus is a traditional industrial protocol widely used in automation and contro
 ...
 ```
 
-For example, our coffee machine has a waterTankPresent property. The form points to the correct Modbus input, and the Consumer simply reads it — no need to know Modbus itself. This way we can treat a decades-old industrial protocol the same way we treat modern web protocols. WoT effectively acts as a semantic and interaction layer on top of Modbus, bridging the gap between industrial systems and web applications.
+For example, our coffee machine has a `waterTankPresent` property. The form references the Modbus address `10003` and specifies the Modbus function using `modv:function` with the value `readDiscreteInput`, which defines the concrete Modbus operation to execute.
+
+The Consumer implementation itself must support Modbus in order to execute this operation. However, the developer writing the Thing Description — and the user interacting with the Thing — do not need detailed knowledge of Modbus specifics. WoT effectively acts as a semantic and interaction layer on top of Modbus, bridging the gap between industrial systems and web applications.
 
 ### Summary
 
