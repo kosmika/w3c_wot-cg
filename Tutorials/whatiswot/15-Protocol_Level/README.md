@@ -3,7 +3,7 @@
 ## Table of Contents
 
 - Introduction
-- What are Protocol Bindings?
+- What are Bindings?
 - Forms Structure
     - WoT Operations
     - Protocol and URI
@@ -39,9 +39,9 @@ If `op` is omitted, default operations are inferred based on the affordance type
 #### Protocol and URI
 
 The most important field in a form is `href`. The `href` is a URI that tells the client where to interact with the Thing and which protocol to use. The protocol is inferred directly from the URI scheme.
-- `https://` -> HTTP
-- `coap://` -> CoAP
-- `mqtt://` -> MQTT
+- `https://coffee.example.com/properties/coffeeBeansLeft` -> HTTP
+- `coap://coffee.example.com/actions/brewCoffee` -> CoAP
+- `mqtt://broker.example.com/coffee/events/lowOnWater` -> MQTT
 
 This design allows the Thing Description concept to stay protocol-agnostic while still enabling concrete protocol-level interactions. A single affordance can expose multiple forms as well, offering the same interaction over different protocols.
 
@@ -149,7 +149,7 @@ Let's use CoAP to invoke the `brewCoffee` action:
       {
         "href": "coap://coffee.example.com/actions/brewCoffee",
         "op": "invokeaction",
-        "contentType": "application/cbor",
+        "contentType": "text/plain",
         "cov:method": "POST"
       }
     ]
@@ -180,7 +180,7 @@ This time, the form uses a `coap://` URI to indicate CoAP instead of HTTP. The `
 }
 ```
 
-Here, the href points to an MQTT broker and topic. The Consumer connects to the MQTT broker, subscribes to the specified topic, and receives event data asynchronously from the broker whenever the event occurs. The form therefore describes what the Consumer needs to do — connect and subscribe — while the actual event data is delivered through the broker using MQTT.
+Here, the href points to an MQTT broker and topic. The Consumer connects to the MQTT broker, subscribes to the specified topic, and receives event data asynchronously from the broker whenever the event occurs. The Thing publishes event messages to the same topic, and the MQTT broker delivers those published messages to all subscribed Consumers.
 
 #### Modbus
 
@@ -192,7 +192,7 @@ Modbus is a traditional industrial protocol widely used in automation and contro
   "properties": {
     "waterTankPresent": {
       "title": "Water Tank Present",
-      "type": "boolean",
+      "type": "integer",
       "description": "Indicates whether the water tank is correctly inserted",
       "forms": [
         {
@@ -207,7 +207,7 @@ Modbus is a traditional industrial protocol widely used in automation and contro
 ...
 ```
 
-For example, our coffee machine has a `waterTankPresent` property. The form references the Modbus address `10003` and specifies the Modbus function using `modv:function` with the value `readDiscreteInput`, which defines the concrete Modbus operation to execute.
+For example, our coffee machine has a `waterTankPresent` property. The form references the Modbus address `10003` and specifies the Modbus function using `modv:function` with the value `readDiscreteInput`, which defines the concrete Modbus operation to execute. The `contentType` is set to `application/octet-stream`, which means the expected response is a sequence of bytes.
 
 The Consumer implementation itself must support Modbus in order to execute this operation. However, the developer writing the Thing Description — and the user interacting with the Thing — do not need detailed knowledge of Modbus specifics. WoT effectively acts as a semantic and interaction layer on top of Modbus, bridging the gap between industrial systems and web applications.
 
@@ -215,7 +215,7 @@ The Consumer implementation itself must support Modbus in order to execute this 
 
 To summarize:
 
-- Protocol bindings define how interactions are executed over the network
+- Bindings define how interactions are executed over the network
 - They are expressed using `forms` in the Thing Description
 - Different protocols fit different interaction patterns
 - WoT unifies them under a single, consistent interaction model
