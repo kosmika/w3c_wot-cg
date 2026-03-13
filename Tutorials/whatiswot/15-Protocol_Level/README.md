@@ -293,7 +293,7 @@ Data:           0x01 0x12C  (= 300 decimal)
 
 The Consumer receives those two bytes and interprets them as a 16-bit big-endian integer: 0x012C = 300. Because the Thing Description specifies that `waterLevel` is an integer, the WoT runtime automatically turns this into the number 300 - the water level in milliliters.
 
-This is WoT's value fully on display. A Consumer that only knows about `readproperty` operations and Thing Descriptions just read a binary Modbus register, without needing to know anything about function codes, register addresses, or byte encoding. All of that knowledge lived in the form, expressed through `modv:function`, `href`, and the base URI. The form is the bridge between the WoT model and the protocol.
+This is WoT's value fully on display. A Consumer that only knows about `readproperty` operations and Thing Descriptions just read a binary Modbus register, without needing to know anything about function codes, register addresses, or byte encoding. All of that knowledge lived in the form, expressed through `modv:function`, `href`, and the base URI. The form is the bridge between the abstracted WoT operations and the protocol.
 
 ### Summary
 
