@@ -62,7 +62,7 @@ While WoT aims to stay protocol-independent, forms allow protocol-specific exten
 
 Now that we understand the structure of forms, let's see how protocol bindings work in practice. When you want to write a Consumer application, you don't need any prior knowledge about the protocol being used. Instead, the Consumer reads the Thing Description, looks at the available forms, and selects one it understands.
 
-We will now quickly show how forms can look and what they mean for the following protocols: HTTP, CoAP, MQTT, and Modbus. Let's revisit our smart coffee machine example from the last video and fill out the forms for our interaction affordances so far.
+Let's walk through four protocols using our smart coffee machine example. For each one, we'll trace exactly how a WoT operation relates to real network traffic.
 
 ``` json
 {
@@ -106,6 +106,8 @@ We will now quickly show how forms can look and what they mean for the following
 
 #### HTTP
 
+First, we want the Consumer to perform the `readProperty` operation on `coffeeBeansLeft` so we can get the remaining amount of coffee beans.
+
 ```json
 "properties": {
   "coffeeBeansLeft": {
@@ -125,11 +127,28 @@ We will now quickly show how forms can look and what they mean for the following
 }
 ```
 
-Here, the form tells the Consumer that it can read the property `coffeeBeansLeft` using HTTP and expects a JSON response. The HTTP method is explicitly defined using `htv:methodName` with the value `GET`, so the Consumer knows exactly which HTTP request method to use.
+To achieve this, the Consumer reads the form and translates it into a network request. The `href` tells it the address and that HTTP is the protocol. Then the `htv:methodName` field says to use a `GET` request and the `contentType` tells it to expect a JSON in return. So the Consumer sends the following request:
+
+```http
+GET /properties/coffeeBeansLeft HTTP/1.1
+Host: coffee.example.com
+Accept: application/json
+```
+
+The Thing receives this, reads its internal sensor, and responds:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+Payload: { "value": 320 }
+```
+
+The Consumer parses the JSON body and now has the `coffeeBeansLeft` value of 320 grams. Notice how each field in the form had a direct counterpart in the request - the WoT form is essentially a declarative description of the HTTP request.
 
 #### CoAP
 
-Let's use CoAP to invoke the `brewCoffee` action:
+Now the Consumer wants to invoke the `brewCoffee` action. 
 
 ```json
 "actions": {
@@ -149,7 +168,7 @@ Let's use CoAP to invoke the `brewCoffee` action:
       {
         "href": "coap://coffee.example.com/actions/brewCoffee",
         "op": "invokeaction",
-        "contentType": "text/plain",
+        "contentType": "application/cbor",
         "cov:method": "POST"
       }
     ]
@@ -157,9 +176,31 @@ Let's use CoAP to invoke the `brewCoffee` action:
 }
 ```
 
-This time, the form uses a `coap://` URI to indicate CoAP instead of HTTP. The `cov:method` field explicitly specifies the CoAP request method — in this case `POST` — which tells the Consumer how to invoke the action at the protocol level. From the Consumer's perspective, invoking the action works conceptually the same as with HTTP — the only difference is the underlying protocol, which is optimized for constrained devices.
+The Consumer reads this form just like before - but now `href` starts with `coap://`, so it knows to use CoAP instead of HTTP. The `cov:method` field says `POST`. The contentType is application/cbor, so this time the Consumer encodes the action input for a medium sized coffee in CBOR.
+
+The resulting CoAP message looks something like this:
+
+```coap
+CoAP POST coap://coffee.example.com/actions/brewCoffee
+Token: 0x4a2b
+Content-Format: 60  (= application/cbor)
+
+Payload (CBOR): a1 64 73 69 7a 65 66 6d 65 64 69 75 6d
+       decoded: { "size": "medium" }
+```
+
+The Thing receives the message and sends back a CoAP response with code `2.04 Changed`, confirming the action was accepted. From the Consumer's perspective, this was identical to invoking the HTTP action - it performed an invokeaction operation and got a success response. The fact that it used CoAP instead of HTTP, or CBOR instead of JSON, was determined entirely by what was written in the form.
+
+```coap
+CoAP ACK 2.04 Changed
+Token: 0x4a2b 
+
+(no payload body)
+```
 
 #### MQTT
+
+For the lowOnWater event, the form looks like this:
 
 ```json
 "events": {
@@ -173,14 +214,40 @@ This time, the form uses a `coap://` URI to indicate CoAP instead of HTTP. The `
       {
         "href": "mqtt://broker.example.com/coffee/events/lowOnWater",
         "op": "subscribeevent",
-        "contentType": "application/json"
+        "contentType": "text/plain"
       }
     ]
   }
 }
 ```
 
-Here, the href points to an MQTT broker and topic. The Consumer connects to the MQTT broker, subscribes to the specified topic, and receives event data asynchronously from the broker whenever the event occurs. The Thing publishes event messages to the same topic, and the MQTT broker delivers those published messages to all subscribed Consumers.
+The `op` field is `subscribeevent`, which tells the Consumer it needs to listen rather than request. The href points to an MQTT broker and includes the topic - `coffee/events/lowOnWater` - that the Consumer should subscribe to. So the Consumer connects to the broker and sends:
+
+```mqtt
+SUBSCRIBE
+Topic: coffee/events/lowOnWater
+QoS: 1
+```
+
+The broker confirms with a SUBACK. 
+
+```mqtt
+SUBACK
+Granted QoS: 1
+```
+
+Now the Consumer is registered and waiting. On the Thing side, when the water level drops below the threshold, it publishes to the same topic:
+
+```mqtt
+PUBLISH
+Topic: coffee/events/lowOnWater
+QoS: 1
+
+Payload: 50
+```
+
+The broker forwards this to the Consumer. The Consumer receives the message, parses the text as declared by `contentType`, and now has the event data: 50 milliliters remaining.
+What's important here is that the WoT operation `subscribeevent` naturally maps to MQTT's publish/subscribe model. The Consumer didn't need to know it was MQTT - it simply performed a `subscribeevent` operation, and the form told it exactly how to do that: connect to this broker, subscribe to this topic and expect a plain text response.
 
 #### Modbus
 
@@ -190,15 +257,15 @@ Modbus is a traditional industrial protocol widely used in automation and contro
 ...
 "base": "modbus+tcp://coffee-machine.example.com:502/1/",
   "properties": {
-    "waterTankPresent": {
-      "title": "Water Tank Present",
+    "waterLevel": {
+      "title": "Water Level",
       "type": "integer",
-      "description": "Indicates whether the water tank is correctly inserted",
+      "description": "Current water level in milliliters",
       "forms": [
         {
           "op": "readproperty",
           "href": "10003",
-          "modv:function": "readDiscreteInput",
+          "modv:function": "HoldingRegister",
           "contentType": "application/octet-stream"
         }
       ]
@@ -207,9 +274,26 @@ Modbus is a traditional industrial protocol widely used in automation and contro
 ...
 ```
 
-For example, our coffee machine has a `waterTankPresent` property. The form references the Modbus address `10003` and specifies the Modbus function using `modv:function` with the value `readDiscreteInput`, which defines the concrete Modbus operation to execute. The `contentType` is set to `application/octet-stream`, which means the expected response is a sequence of bytes.
+Let's trace how the Consumer translates this form into a Modbus message. The `base` URI gives it the device address and port 502. The /1/ at the end is the Unit ID - the Modbus device identifier on the bus. The `href` value `10003` is the register address. The `modv:function` field says `HoldingRegister`, which can be read or written to, and are typically used to store sensor values like a water level. The `contentType` is set to `application/octet-stream`, which means the expected response is a sequence of bytes. Putting this all together, the Consumer sends:
 
-The Consumer implementation itself must support Modbus in order to execute this operation. However, the developer writing the Thing Description — and the user interacting with the Thing — do not need detailed knowledge of Modbus specifics. WoT effectively acts as a semantic and interaction layer on top of Modbus, bridging the gap between industrial systems and web applications.
+```modbus
+Unit ID:        0x01     (from /1/ in base URI)
+Function Code:  0x03     (HoldingRegister from modv:function)
+Start Address:  0x0002   (= 10003 from href)
+Quantity:       0x0001   (read 1 register = 2 bytes)
+```
+
+The Thing responds with the raw register value:
+
+```modbus
+Function Code:  0x03
+Byte Count:     0x02     (2 bytes for one 16-bit register)
+Data:           0x01 0x12C  (= 300 decimal)
+```
+
+The Consumer receives those two bytes and interprets them as a 16-bit big-endian integer: 0x012C = 300. Because the Thing Description specifies that `waterLevel` is an integer, the WoT runtime automatically turns this into the number 300 - the water level in milliliters.
+
+This is WoT's value fully on display. A Consumer that only knows about `readproperty` operations and Thing Descriptions just read a binary Modbus register, without needing to know anything about function codes, register addresses, or byte encoding. All of that knowledge lived in the form, expressed through `modv:function`, `href`, and the base URI. The form is the bridge between the WoT model and the protocol.
 
 ### Summary
 
