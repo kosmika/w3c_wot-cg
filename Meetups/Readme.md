@@ -5,6 +5,16 @@ This readme contains the links to minutes, presentation files and the recordings
 
 Note: Presentation files use the pattern `YEAR-MONTH-WoTCG-EVENTNAME-PRESENTERNAME.FILETYPE`.
 
+## Meetup 33
+
+- Name: Interoperable Cyber-Physical Multi-Agent Systems Through WoT
+- Presenter(s): Roman Binkert
+- Date: 24 April 2026
+- [Presenter Slides](./33/2026-04-WoTCG-Meetup33-WoMaT-Binkert.pdf)
+- Intro Slides: [Google Slides](https://docs.google.com/presentation/d/19i_sRMWO3mKbv_SeGMMOaegaxYLIgY-acfMxwdVD-Jo/edit?usp=sharing) | [PDF](./33/2026-04-WoTCG-Meetup33-AguzziKorkan.pdf)
+- [Video](https://youtu.be/xMIHykB_ebg)
+- [Minutes](./33/2026-04-24-minutes.md)
+
 ## Meetup 32
 
 - Name: From WoT to Chain: Enabling Zero-Trust Oracles for Blockchain IoT Applications
