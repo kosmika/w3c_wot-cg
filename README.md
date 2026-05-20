@@ -52,7 +52,7 @@ The W3C WoT Community Group builds a community around the recommendations and no
 - [CG Charter](https://www.w3.org/community/wot/charter/)
 - [Chat](https://discord.gg/RJNYJsEgnb)
 - [YouTube Channel](https://www.youtube.com/@WoTCG)
-- [What is WoT? Tutorial Homepage](https://w3c.github.io/wot-cg/tutorials/whatiswot/)
+- [What is WoT? Tutorial Homepage](https://w3c-cg.github.io/wot-cg/tutorials/whatiswot/)
 - [Official Page of W3C WoT](https://www.w3.org/WoT)
 - [Official Twitter Account of W3C WoT](https://twitter.com/W3C_WoT)
 
@@ -69,5 +69,5 @@ The W3C WoT Community Group builds a community around the recommendations and no
 
 ## Contact
 
-Please open issues or email the chairs. You can also use our [Office Hours](https://github.com/w3c/wot-cg/discussions/16) and directly talk with group representatives. 
+Please open issues or email the chairs. You can also use our [Office Hours](https://github.com/w3c-cg/wot-cg/discussions/16) and directly talk with group representatives. 
 
