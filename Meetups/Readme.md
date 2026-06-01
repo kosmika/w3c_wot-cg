@@ -5,6 +5,16 @@ This readme contains the links to minutes, presentation files and the recordings
 
 Note: Presentation files use the pattern `YEAR-MONTH-WoTCG-EVENTNAME-PRESENTERNAME.FILETYPE`.
 
+## Meetup 34
+
+- Name: Quick onboarding of devices to Prosys Forge using OPC UA WoT Connectivity
+- Presenter(s): Jouni Aro and Iivo Yrjölä
+- Date: 28 May 2026
+- [Presenter Slides](./34/2026-05-WoTCG-Meetup34-onboarding-prosys.pdf)
+- Intro Slides: [Google Slides](https://docs.google.com/presentation/d/1wfNo2CIODBaKUgMssS_1oD5ta-pAydvDRXkp3lDKW0c/edit?usp=sharing) | [PDF](./34/2026-05-WoTCG-Meetup34-AguzziKorkan.pdf)
+- [Video](https://youtu.be/l-suLrJDjd0)
+- [Minutes](./34/2026-05-28-minutes.md)
+
 ## Meetup 33
 
 - Name: Interoperable Cyber-Physical Multi-Agent Systems Through WoT
